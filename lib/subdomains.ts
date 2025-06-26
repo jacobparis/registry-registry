@@ -26,17 +26,69 @@ export function isValidIcon(str: string) {
   return str.length >= 1 && str.length <= 10;
 }
 
-type SubdomainData = {
-  emoji: string;
-  createdAt: number;
+// Shadcn registry component type
+type RegistryComponent = {
+  name: string;
+  type: string;
+  dependencies?: string[];
+  registryDependencies?: string[];
+  files: Array<{
+    path: string;
+    type: string;
+    content?: string;
+  }>;
+  tailwind?: {
+    config?: Record<string, any>;
+  };
+  cssVars?: {
+    light?: Record<string, string>;
+    dark?: Record<string, string>;
+  };
 };
 
-export async function getSubdomainData(subdomain: string) {
+type SubdomainConfig = {
+  emoji: string;
+  createdAt: number;
+  registry: RegistryComponent[];
+  name?: string;
+  description?: string;
+};
+
+export function isValidRegistry(registryJson: string): boolean {
+  try {
+    const registry = JSON.parse(registryJson);
+    
+    // Check if it's an array
+    if (!Array.isArray(registry)) {
+      console.log('Registry is not an array');
+      console.log(registry);
+      return false;
+    }
+
+    // // Check if each item has required properties
+    // for (const component of registry) {
+    //   if (!component.name || !component.type || !component.files || !Array.isArray(component.files)) {
+    //     return false;
+    //   }
+    // }
+
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function getSubdomainData(subdomain: string): Promise<SubdomainConfig | null> {
   const sanitizedSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
-  const data = await redis.get<SubdomainData>(
+  const data = await redis.get<string | SubdomainConfig>(
     `subdomain:${sanitizedSubdomain}`
   );
-  return data;
+  
+  if (!data) {
+    return null;
+  }
+
+  return data as SubdomainConfig;
 }
 
 export async function getAllSubdomains() {
@@ -46,16 +98,37 @@ export async function getAllSubdomains() {
     return [];
   }
 
-  const values = await redis.mget<SubdomainData[]>(...keys);
+  const values = await redis.mget<(string | SubdomainConfig)[]>(...keys);
 
   return keys.map((key, index) => {
     const subdomain = key.replace('subdomain:', '');
-    const data = values[index];
+    const rawData = values[index];
+    
+    let data: SubdomainConfig | null = null;
+    
+    if (rawData) {
+      // Handle backwards compatibility - if data is already an object (old format)
+      if (typeof rawData === 'object' && rawData !== null) {
+        console.log('Found old format data for', subdomain, '- converting...');
+        data = rawData as SubdomainConfig;
+      }
+      // Handle new format - data is a JSON string
+      else if (typeof rawData === 'string') {
+        try {
+          data = JSON.parse(rawData);
+        } catch (error) {
+          console.error('Failed to parse subdomain data JSON for', subdomain, ':', error);
+        }
+      }
+    }
 
     return {
       subdomain,
       emoji: data?.emoji || '❓',
-      createdAt: data?.createdAt || Date.now()
+      createdAt: data?.createdAt || Date.now(),
+      componentsCount: data?.registry?.length || 0,
+      name: data?.name || subdomain,
+      description: data?.description || `${subdomain} registry`
     };
   });
 }
