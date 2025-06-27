@@ -58,7 +58,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
     style: styleName,
     // You could add style-specific transformations here
     meta: {
-      ...component.meta,
       requestedStyle: styleName
     }
   };
