@@ -15,6 +15,9 @@ export async function extractSubdomainFromHeaders(headersList: Headers): Promise
   // TODO: security risk?
   const host = headersList.get('x-forwarded-host') || headersList.get('host') || '';
 
+  console.log('host', host);
+  console.log('rootDomain', rootDomain);
+  
   const hostname = host.split(':')[0];
   // Local development environment
   if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
