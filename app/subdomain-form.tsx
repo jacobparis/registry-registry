@@ -51,7 +51,7 @@ function SubdomainInput({ defaultValue }: { defaultValue?: string }) {
           />
         </div>
         <span className="bg-gray-100 px-3 border border-l-0 border-input rounded-r-md text-gray-500 min-h-[36px] flex items-center">
-          .{location.host}
+          .{rootDomain}
         </span>
       </div>
     </div>
