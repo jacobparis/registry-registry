@@ -7,11 +7,12 @@ import { ComponentDetail } from '@/app/components/component-detail';
 interface ItemPageProps {
   params: Promise<{
     item: string;
+    subdomain: string;
   }>;
 }
 
 export default async function ItemPage({ params }: ItemPageProps) {
-  const subdomain = await extractSubdomainFromHeaders(await headers());
+  const { subdomain } = await params;
   
   // Must be on a subdomain to show component details
   if (!subdomain) {

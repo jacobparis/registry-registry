@@ -7,11 +7,12 @@ interface RouteContext {
   params: Promise<{
     style: string;
     item: string;
+    subdomain: string;
   }>;
 }
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  const subdomain = await extractSubdomainFromHeaders(await headers());
+  const { subdomain } = await context.params;
   
   if (!subdomain) {
     return NextResponse.json(

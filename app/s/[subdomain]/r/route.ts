@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSubdomainData } from '@/lib/subdomains';
-import { extractSubdomainFromHeaders } from '@/lib/utils';
 
-export async function GET(request: NextRequest) {
-  const subdomain = await extractSubdomainFromHeaders(request.headers);
+interface RouteContext {
+  params: Promise<{
+    subdomain: string;
+  }>;
+}
+
+export async function GET(request: NextRequest, context: RouteContext) {
+  const { subdomain } = await context.params;
 
   if (!subdomain) {
     return NextResponse.json(
