@@ -12,7 +12,10 @@ interface ItemPageProps {
 }
 
 export default async function ItemPage({ params }: ItemPageProps) {
-  const { subdomain } = await params;
+  const { item: itemName, subdomain } = await params;
+  
+  console.log('subdomain', subdomain);
+  console.log('itemName', itemName);
   
   // Must be on a subdomain to show component details
   if (!subdomain) {
@@ -24,7 +27,6 @@ export default async function ItemPage({ params }: ItemPageProps) {
     notFound();
   }
 
-  const { item: itemName } = await params;
   
   // Try to get the component data directly from KV first
   let component = await getComponentData(subdomain, itemName);
