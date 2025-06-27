@@ -54,7 +54,7 @@ export async function middleware(request: NextRequest) {
     }
 
     
-    return NextResponse.rewrite(new URL(`/s/${subdomain}`, request.url));
+    return NextResponse.rewrite(new URL(`/s/${subdomain}`, request.url + pathname));
   }
 
   // On the root domain, allow normal access
