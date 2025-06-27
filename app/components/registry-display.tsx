@@ -100,7 +100,7 @@ function ComponentCard({
       {/* Install Command */}
       <div className="p-4 border-b">
         <div className="bg-muted p-3 rounded font-mono text-sm">
-          npx shadcn@latest add ${protocol}://${subdomain}.${rootDomain}/r/${component.name}
+          npx shadcn@latest add {protocol}://{subdomain}.{rootDomain}/r/{component.name}
         </div>
       </div>
 
