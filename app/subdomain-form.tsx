@@ -7,8 +7,6 @@ import { useActionState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
 import { createSubdomainAction } from '@/app/actions';
 import { rootDomain } from '@/lib/utils';
 
@@ -16,10 +14,26 @@ type CreateState = {
   error?: string;
   success?: boolean;
   subdomain?: string;
-  registryJson?: string;
-  name?: string;
-  description?: string;
+  registryUrl?: string;
 };
+
+const POPULAR_REGISTRIES = [
+  {
+    name: 'shadcn/ui',
+    url: 'https://ui.shadcn.com/r',
+    description: 'Official shadcn/ui registry'
+  },
+  {
+    name: 'Magic UI',
+    url: 'https://magicui.design/r',
+    description: 'Animated components'
+  },
+  {
+    name: 'Origin UI',
+    url: 'https://originui.com/r',
+    description: 'Beautiful components'
+  }
+];
 
 function SubdomainInput({ defaultValue }: { defaultValue?: string }) {
   return (
@@ -44,68 +58,54 @@ function SubdomainInput({ defaultValue }: { defaultValue?: string }) {
   );
 }
 
-function RegistryDetailsInput({ 
-  defaultName, 
-  defaultDescription 
+function RegistryUrlInput({ 
+  defaultUrl,
+  onUrlChange
 }: { 
-  defaultName?: string;
-  defaultDescription?: string;
+  defaultUrl?: string;
+  onUrlChange: (url: string) => void;
 }) {
+  const [url, setUrl] = useState(defaultUrl || '');
+
+  const handleUrlChange = (newUrl: string) => {
+    setUrl(newUrl);
+    onUrlChange(newUrl);
+  };
+
   return (
-    <>
+    <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="name">Display Name (optional)</Label>
+        <Label htmlFor="registryUrl">Registry URL</Label>
         <Input
-          id="name"
-          name="name"
-          placeholder="My Component Registry"
-          defaultValue={defaultName}
+          id="registryUrl"
+          name="registryUrl"
+          placeholder="https://ui.shadcn.com/r"
+          value={url}
+          onChange={(e) => handleUrlChange(e.target.value)}
+          type="url"
+          required
         />
         <p className="text-xs text-gray-500">
-          Friendly name for your registry
+          Enter a URL that returns a shadcn registry JSON. We'll fetch it server-side when you publish.
         </p>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description">Description (optional)</Label>
-        <Input
-          id="description"
-          name="description"
-          placeholder="A collection of beautiful UI components"
-          defaultValue={defaultDescription}
-        />
-        <p className="text-xs text-gray-500">
-          Brief description of your registry
-        </p>
+        <Label className="text-sm font-medium text-gray-700">Popular Registries</Label>
+        <div className="flex flex-wrap gap-2">
+          {POPULAR_REGISTRIES.map((registry) => (
+            <button
+              key={registry.name}
+              type="button"
+              onClick={() => handleUrlChange(registry.url)}
+              className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-full border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+              title={registry.description}
+            >
+              {registry.name}
+            </button>
+          ))}
+        </div>
       </div>
-    </>
-  );
-}
-
-function RegistryJsonInput({ defaultValue }: { defaultValue?: string }) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor="registry">Registry JSON</Label>
-      <Textarea
-        id="registry"
-        name="registry"
-        placeholder='[{"name": "button", "type": "registry:ui", "files": [{"path": "ui/button.tsx", "type": "registry:ui"}]}]'
-        defaultValue={defaultValue}
-        className="min-h-[200px] font-mono text-sm"
-        required
-      />
-      <p className="text-xs text-gray-500">
-        Paste your shadcn registry JSON format. See{' '}
-        <a 
-          href="https://ui.shadcn.com/r" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="text-blue-600 hover:underline"
-        >
-          ui.shadcn.com/r
-        </a>{' '}
-        for the format example.
-      </p>
     </div>
   );
 }
@@ -116,16 +116,16 @@ export function SubdomainForm() {
     {}
   );
 
+  const [registryUrl, setRegistryUrl] = useState(state?.registryUrl || '');
+
   return (
     <form action={action} className="space-y-6">
       <SubdomainInput defaultValue={state?.subdomain} />
 
-      <RegistryDetailsInput 
-        defaultName={state?.name}
-        defaultDescription={state?.description}
+      <RegistryUrlInput 
+        defaultUrl={state?.registryUrl}
+        onUrlChange={setRegistryUrl}
       />
-
-      <RegistryJsonInput defaultValue={state?.registryJson} />
 
       {state?.error && (
         <div className="text-sm text-red-500 p-3 bg-red-50 rounded-md">

@@ -30,12 +30,14 @@ export function isValidIcon(str: string) {
 type RegistryComponent = {
   name: string;
   type: string;
+  description?: string;
   dependencies?: string[];
   registryDependencies?: string[];
   files: Array<{
     path: string;
     type: string;
     content?: string;
+    target?: string;
   }>;
   tailwind?: {
     config?: Record<string, any>;
@@ -89,6 +91,29 @@ export async function getSubdomainData(subdomain: string): Promise<SubdomainConf
   }
 
   return data as SubdomainConfig;
+}
+
+export async function getComponentData(subdomain: string, componentName: string): Promise<RegistryComponent | null> {
+  const sanitizedSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
+  const componentKey = `component:${sanitizedSubdomain}:${componentName}`;
+  
+  const data = await redis.get<string | RegistryComponent>(componentKey);
+  
+  if (!data) {
+    return null;
+  }
+
+  // Handle both string and object formats for backward compatibility
+  if (typeof data === 'string') {
+    try {
+      return JSON.parse(data);
+    } catch (error) {
+      console.error('Failed to parse component data JSON:', error);
+      return null;
+    }
+  }
+  
+  return data as RegistryComponent;
 }
 
 export async function getAllSubdomains() {
