@@ -10,6 +10,7 @@ export default async function HomePage() {
   
   // If we're on a subdomain, show registry details
   if (subdomain) {
+    console.log('subdomain', subdomain);
     const subdomainData = await getSubdomainData(subdomain);
     if (!subdomainData) {
       notFound();
