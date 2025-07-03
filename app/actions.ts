@@ -292,8 +292,38 @@ export async function updateComponentAction(
   componentData: any
 ) {
   try {
+    // Check if this is a rename operation (new name is different from old name)
+    const isRename = componentData.name && componentData.name !== componentName;
+    
+    if (isRename) {
+      // Check if a component with the new name already exists
+      const existingComponent = await redis.get(`component:${subdomain}:${componentData.name}`);
+      if (existingComponent) {
+        return { 
+          success: false, 
+          error: `A component named "${componentData.name}" already exists. Please choose a different name.` 
+        };
+      }
+    }
+    
+    // For new components, check if the name is already taken
+    if (!componentName && componentData.name) {
+      const existingComponent = await redis.get(`component:${subdomain}:${componentData.name}`);
+      if (existingComponent) {
+        return { 
+          success: false, 
+          error: `A component named "${componentData.name}" already exists. Please choose a different name.` 
+        };
+      }
+    }
+
+    // If this is a rename, delete the old component first
+    if (isRename) {
+      await redis.del(`component:${subdomain}:${componentName}`);
+    }
+
     // Update individual component
-    const componentKey = `component:${subdomain}:${componentName}`;
+    const componentKey = `component:${subdomain}:${componentData.name || componentName}`;
     await redis.set(componentKey, JSON.stringify(componentData));
     
     // Update component in main registry data
@@ -304,9 +334,10 @@ export async function updateComponentAction(
       if (parsedData.registry && Array.isArray(parsedData.registry)) {
         const componentIndex = parsedData.registry.findIndex((c: any) => c.name === componentName);
         if (componentIndex !== -1) {
+          // Update existing component
           parsedData.registry[componentIndex] = componentData;
         } else {
-          // If component doesn't exist, add it
+          // Add new component
           parsedData.registry.push(componentData);
         }
         
@@ -317,7 +348,7 @@ export async function updateComponentAction(
     
     // Revalidate paths that might show this component
     revalidatePath(`/r/${subdomain}`);
-    revalidatePath(`/r/${subdomain}/${componentName}`);
+    revalidatePath(`/r/${subdomain}/${componentData.name || componentName}`);
     
     return { success: true };
   } catch (error) {
@@ -354,4 +385,18 @@ export async function deleteSubdomainAction(
   
   revalidatePath('/admin');
   return { success: 'Domain deleted successfully' };
+}
+
+export async function checkComponentNameExists(
+  subdomain: string,
+  componentName: string
+) {
+  try {
+    const componentKey = `component:${subdomain}:${componentName}`;
+    const existingComponent = await redis.get(componentKey);
+    return { exists: !!existingComponent };
+  } catch (error) {
+    console.error('Error checking component name:', error);
+    return { error: 'Failed to check component name' };
+  }
 }

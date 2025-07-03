@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { rootDomain, protocol } from "@/lib/utils";
 import { CopyCommand } from "@/components/copy-command";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 interface RegistryComponent {
   name: string;
@@ -139,7 +141,7 @@ export function RegistryDisplay({
 
   // Group components by type
   const groupedComponents = subdomainData.registry?.reduce((acc, component) => {
-    const type = component.type.replace('registry:', '');
+    const type = component.type?.replace('registry:', '') || 'other';
     if (!acc[type]) {
       acc[type] = [];
     }
@@ -153,9 +155,17 @@ export function RegistryDisplay({
   return (
     <div className="max-w-5xl mx-auto px-8 py-16">
       <header className="mb-12">
-        <h1 className="text-3xl font-normal tracking-tight mb-4">
-          {subdomainData.name || `${subdomain} Registry`}
-        </h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-3xl font-normal tracking-tight">
+            {subdomainData.name || `${subdomain} Registry`}
+          </h1>
+          <Button asChild>
+            <Link href={`/items/new`} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add Component
+            </Link>
+          </Button>
+        </div>
         <p className="text-gray-500 dark:text-gray-400 mb-4">
           {subdomainData.description ||
             `A custom registry for distributing code using shadcn.`}
