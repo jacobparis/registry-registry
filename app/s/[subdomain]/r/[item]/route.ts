@@ -1,6 +1,4 @@
 import { getSubdomainData, getComponentData } from '@/lib/subdomains';
-import { extractSubdomainFromHeaders } from '@/lib/utils';
-import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 interface RouteContext {

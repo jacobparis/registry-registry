@@ -1,18 +1,18 @@
 import { getSubdomainData } from '@/lib/subdomains';
 import { notFound } from 'next/navigation';
-import { extractSubdomainFromHeaders } from '@/lib/utils';
-import { headers } from 'next/headers';
-import { RegistryDisplay } from '@/app/components/registry-display';
-import { NewRegistryForm } from '@/app/components/new-registry-form';
-
+import { RegistryDisplay } from '@/components/registry-display';
 
 export default async function HomePage({ params }: { params: Promise<{ subdomain: string }> }) {
   const { subdomain } = await params;
  
-    const subdomainData = await getSubdomainData(subdomain);
-    if (!subdomainData) {
-      notFound();
-    }
+  const subdomainData = await getSubdomainData(subdomain);
+  if (!subdomainData) {
+    notFound();
+  }
 
-    return <RegistryDisplay subdomain={subdomain} subdomainData={subdomainData} />;
+  return (
+    <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white font-mono">
+      <RegistryDisplay subdomain={subdomain} subdomainData={subdomainData} />
+    </div>
+  );
 }

@@ -1,4 +1,4 @@
-import { NewRegistryForm } from '@/app/components/new-registry-form';
+import { NewRegistryForm } from '@/components/new-registry-form';
 
 export default async function HomePage() {
  

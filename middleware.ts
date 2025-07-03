@@ -5,6 +5,17 @@ function extractSubdomain(request: NextRequest): string | null {
   const url = request.url;
   const host = request.headers.get('host') || '';
   const hostname = host.split(':')[0];
+  
+  if (hostname === '[') {
+    // locally, host can be [::1] or [::1]:3000
+    const forwardedHost = request.headers.get('x-forwarded-host');
+    if (forwardedHost) {
+      const parts = forwardedHost.split('.');
+      return parts.length > 0 ? parts[0] : null;
+    }
+
+    return null;
+  }
 
   // Local development environment
   if (url.includes('localhost') || url.includes('127.0.0.1')) {

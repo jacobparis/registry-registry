@@ -1,8 +1,6 @@
 import { getSubdomainData, getComponentData } from '@/lib/subdomains';
 import { notFound } from 'next/navigation';
-import { extractSubdomainFromHeaders } from '@/lib/utils';
-import { headers } from 'next/headers';
-import { ComponentDetail } from '@/app/components/component-detail';
+import { ComponentDetail } from './page-client';
 
 interface ItemPageProps {
   params: Promise<{
@@ -52,7 +50,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
 }
 
 export async function generateMetadata({ params }: ItemPageProps) {
-  const subdomain = await extractSubdomainFromHeaders(await headers());
+  const { subdomain } = await params;
   
   if (!subdomain) {
     return {
