@@ -2,6 +2,25 @@ import Link from "next/link";
 import { rootDomain, protocol } from "@/lib/utils";
 import { CopyCommand } from "@/components/copy-command";
 
+interface RegistryComponent {
+  name: string;
+  type: string;
+  description?: string;
+  dependencies?: string[];
+  registryDependencies?: string[];
+  files?: Array<{
+    path: string;
+    type: string;
+    content?: string;
+    target?: string;
+  }>;
+  cssVars?: {
+    theme?: Record<string, string>;
+    light?: Record<string, string>;
+    dark?: Record<string, string>;
+  };
+}
+
 interface RegistryDisplayProps {
   subdomain: string;
   subdomainData: {
@@ -9,19 +28,7 @@ interface RegistryDisplayProps {
     description?: string;
     emoji: string;
     createdAt: number;
-    registry: Array<{
-      name: string;
-      type: string;
-      description?: string;
-      dependencies?: string[];
-      registryDependencies?: string[];
-      files?: Array<{
-        path: string;
-        type: string;
-        content?: string;
-        target?: string;
-      }>;
-    }>;
+    registry: RegistryComponent[];
   };
 }
 
@@ -29,7 +36,7 @@ function ComponentCard({
   component, 
   subdomain 
 }: { 
-  component: any; 
+  component: RegistryComponent; 
   subdomain: string;
 }) {
   return (
@@ -63,7 +70,7 @@ function ComponentCard({
 
 
       {/* Dependencies */}
-      {(component.dependencies?.length > 0 || component.registryDependencies?.length > 0) && (
+      {((component.dependencies && component.dependencies.length > 0) || (component.registryDependencies && component.registryDependencies.length > 0)) && (
         <div className="mt-6">
           <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Dependencies</h4>
           <div className="flex flex-wrap gap-2 -mx-2 mt-2">
@@ -103,7 +110,6 @@ function ComponentCard({
           </div>
         </div>
       )}
-
 
       {/* Files */}
       {component.files && component.files.length > 0 && (

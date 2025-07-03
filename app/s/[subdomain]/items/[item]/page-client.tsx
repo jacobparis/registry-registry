@@ -63,17 +63,6 @@ interface RegistryItemData {
   meta?: Record<string, any>;
 }
 
-interface ComponentDetailProps {
-  component: RegistryItemData;
-  subdomain: string;
-  registryData: {
-    name?: string;
-    description?: string;
-    emoji: string;
-    createdAt: number;
-    registry: RegistryItemData[];
-  };
-}
 
 const REGISTRY_TYPES = [
   'registry:block',
@@ -99,174 +88,25 @@ const FILE_TYPES = [
   'registry:example'
 ];
 
-function InlineInput({
-  value, onChange, placeholder = "Click to edit", className = "", onSave, ...props
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  onSave?: () => void;
-} & Omit<React.ComponentProps<'input'>, 'value' | 'onChange'>) {
-  const inputRef = React.useRef<HTMLInputElement>(null);
 
-  return (
-    <input
-      ref={inputRef}
-      type="text"
-      defaultValue={value}
-      onBlur={() => {
-        const currentValue = inputRef.current?.value || '';
-        if (currentValue !== value) {
-          onChange(currentValue);
-          onSave?.();
-        }
-      }}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          e.currentTarget.blur();
-        } else if (e.key === 'Escape') {
-          if (inputRef.current) {
-            inputRef.current.value = value;
-          }
-          e.currentTarget.blur();
-        }
-      }}
-      placeholder={placeholder}
-      className={`
-        w-full
-        py-2 px-4 
-        bg-muted/50 sm:text-sm
-        border-none 
-        outline-none 
-        ring-0
-        transition-all
-        duration-200
-        placeholder:text-muted-foreground
-        hover:bg-muted rounded-sm
-        hover:border hover:border-border focus:ring-2 focus:ring-ring focus:rounded-md focus:shadow-sm
-        ${!value ? 'text-muted-foreground' : ''}
-        ${className}
-      `}
-      {...props}
-    />
-  );
-}
 
-function InlineSelect({
-  value, onChange, options, className = "", onSave
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  options: string[];
-  className?: string;
-  onSave?: () => void;
-}) {
-  return (
-    <Select
-      value={value}
-      onValueChange={(newValue) => {
-        onChange(newValue);
-        onSave?.();
-      }}
-    >
-      <SelectTrigger className={cn("border-none shadow-none bg-transparent py-0 h-auto font-medium", className)}>
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((option) => (
-          <SelectItem key={option} value={option}>
-            {option}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
-
-function InlineTextarea({
-  value, onChange, className = "", onSave, ...props
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  onSave?: () => void;
-} & Omit<React.ComponentProps<'textarea'>, 'value' | 'onChange'>) {
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-
-  return (
-    <textarea
-      ref={textareaRef}
-      defaultValue={value}
-      onBlur={(event) => {
-        const currentValue = event.currentTarget.value;
-        if (currentValue !== value) {
-          onChange(currentValue);
-          onSave?.();
-        }
-      }}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') {
-          event.currentTarget.value = value;
-          event.currentTarget.blur();
-        } else if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-          event.currentTarget.blur();
-        }
-      }}
-      className={cn(`
-        w-full px-4 py-2
-        bg-muted/50 sm:text-sm
-        border-none 
-        outline-none 
-        ring-0
-        resize-none
-        transition-all
-        duration-200  
-        placeholder:text-muted-foreground
-        hover:bg-muted hover:rounded-sm
-        focus:bg-background focus:border focus:border-input focus:ring-2 focus:ring-ring focus:rounded-md focus:shadow-sm
-        min-h-[4rem] h-auto`,
-        !value ? 'text-muted-foreground' : '',
-        className
-      )}
-      rows={1}
-      {...props}
-    />
-  );
-}
 
 export function ComponentDetail({ component: initialComponent, subdomain, registryData }: {
-  component: RegistryComponent;
+  component: RegistryItemData;
   subdomain: string;
   registryData: {
     name?: string;
     description?: string;
     emoji: string;
     createdAt: number;
-    registry: RegistryComponent[];
+    registry: RegistryItemData[];
   };
 }) {
-  const allComponents = registryData.registry;
   const [component, setComponent] = useState<RegistryItemData>(initialComponent);
   const [copiedText, setCopiedText] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  const getFileTypeColor = (type: string) => {
-    switch (type) {
-      case 'registry:component':
-      case 'registry:ui':
-        return 'bg-blue-100 text-blue-800';
-      case 'registry:hook':
-        return 'bg-green-100 text-green-800';
-      case 'registry:lib':
-      case 'registry:utils':
-        return 'bg-purple-100 text-purple-800';
-      case 'registry:page':
-        return 'bg-orange-100 text-orange-800';
-      case 'registry:example':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const handleCopy = async (text: string, type: string) => {
     try {
@@ -278,82 +118,15 @@ export function ComponentDetail({ component: initialComponent, subdomain, regist
     }
   };
 
-  const saveComponent = async () => {
-    setIsSaving(true);
-    try {
-      const result = await updateComponentAction(subdomain, component.name, component);
-      if (!result.success) {
-        console.error('Failed to save component:', result.error);
-      }
-    } catch (error) {
-      console.error('Error saving component:', error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
-  const addDependency = (type: 'dependencies' | 'registryDependencies') => {
-    setComponent(prev => ({
-      ...prev,
-      [type]: [...(prev[type] || []), '']
-    }));
-  };
 
-  const removeDependency = (type: 'dependencies' | 'registryDependencies', index: number) => {
-    setComponent(prev => ({
-      ...prev,
-      [type]: prev[type]?.filter((_, i) => i !== index) || []
-    }));
-  };
 
-  const updateDependency = (type: 'dependencies' | 'registryDependencies', index: number, value: string) => {
-    setComponent(prev => ({
-      ...prev,
-      [type]: prev[type]?.map((dep, i) => i === index ? value : dep) || []
-    }));
-  };
 
-  const addFile = () => {
-    setComponent(prev => ({
-      ...prev,
-      files: [...(prev.files || []), { path: '', type: 'registry:component' }]
-    }));
-  };
 
-  const removeFile = (index: number) => {
-    setComponent(prev => ({
-      ...prev,
-      files: prev.files?.filter((_, i) => i !== index) || []
-    }));
-  };
 
-  const updateFile = (index: number, field: keyof RegistryItemFile, value: string) => {
-    setComponent(prev => ({
-      ...prev,
-      files: prev.files?.map((file, i) => i === index ? { ...file, [field]: value } : file) || []
-    }));
-  };
 
-  const addCategory = () => {
-    setComponent(prev => ({
-      ...prev,
-      categories: [...(prev.categories || []), '']
-    }));
-  };
 
-  const removeCategory = (index: number) => {
-    setComponent(prev => ({
-      ...prev,
-      categories: prev.categories?.filter((_, i) => i !== index) || []
-    }));
-  };
 
-  const updateCategory = (index: number, value: string) => {
-    setComponent(prev => ({
-      ...prev,
-      categories: prev.categories?.map((cat, i) => i === index ? value : cat) || []
-    }));
-  };
 
   const updateCssVar = (section: 'theme' | 'light' | 'dark', key: string, value: string) => {
     setComponent(prev => ({
@@ -368,22 +141,7 @@ export function ComponentDetail({ component: initialComponent, subdomain, regist
     }));
   };
 
-  const addCssVar = (section: 'theme' | 'light' | 'dark') => {
-    const key = prompt('Enter CSS variable name:');
-    if (key) {
-      updateCssVar(section, key, '');
-    }
-  };
 
-  const removeCssVar = (section: 'theme' | 'light' | 'dark', key: string) => {
-    setComponent(prev => {
-      const newCssVars = { ...prev.cssVars };
-      if (newCssVars[section]) {
-        delete newCssVars[section][key];
-      }
-      return { ...prev, cssVars: newCssVars };
-    });
-  };
 
   const installCommand = `npx shadcn@latest add ${protocol}://${subdomain}.${rootDomain}/r/${component.name}`;
 
@@ -393,16 +151,11 @@ export function ComponentDetail({ component: initialComponent, subdomain, regist
     const [isSaving, setIsSaving] = useState(false);
     const [fileToDelete, setFileToDelete] = useState<number | null>(null);
 
-    const mainFile = component.files?.find(file => 
-      file.type === 'registry:component' || 
-      file.type === 'registry:ui' ||
-      file.path.includes(component.name)
-    );
 
     const hasDependencies = (component.dependencies && component.dependencies.length > 0) || 
       (component.registryDependencies && component.registryDependencies.length > 0);
 
-    const handleSaveFile = async (index: number) => {
+    const handleSaveFile = async () => {
       setIsSaving(true);
       try {
         const result = await updateComponentAction(subdomain, component.name, {
@@ -448,12 +201,6 @@ export function ComponentDetail({ component: initialComponent, subdomain, regist
       );
     };
 
-    const handleDeleteConfirm = async () => {
-      if (fileToDelete !== null) {
-        await removeFile(fileToDelete);
-        setFileToDelete(null);
-      }
-    };
 
     return (
       <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white font-mono">
@@ -520,6 +267,58 @@ export function ComponentDetail({ component: initialComponent, subdomain, regist
                         <code key={index} className="text-sm text-gray-800 dark:text-gray-300">
                           {dep}
                         </code>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* CSS Variables */}
+          {component.cssVars && (Object.keys(component.cssVars.theme || {}).length > 0 || 
+                               Object.keys(component.cssVars.light || {}).length > 0 || 
+                               Object.keys(component.cssVars.dark || {}).length > 0) && (
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">CSS Variables</h2>
+              </div>
+              <div className="bg-gray-100 dark:bg-gray-950 px-3 py-2 rounded space-y-3">
+                {component.cssVars.theme && Object.keys(component.cssVars.theme).length > 0 && (
+                  <div>
+                    <h3 className="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Theme</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {Object.entries(component.cssVars.theme).map(([key, value]) => (
+                        <div key={key} className="contents">
+                          <code className="text-sm text-gray-800 dark:text-gray-300">{key}</code>
+                          <code className="text-sm text-gray-600 dark:text-gray-400">{value}</code>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {component.cssVars.light && Object.keys(component.cssVars.light).length > 0 && (
+                  <div>
+                    <h3 className="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Light Mode</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {Object.entries(component.cssVars.light).map(([key, value]) => (
+                        <div key={key} className="contents">
+                          <code className="text-sm text-gray-800 dark:text-gray-300">{key}</code>
+                          <code className="text-sm text-gray-600 dark:text-gray-400">{value}</code>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {component.cssVars.dark && Object.keys(component.cssVars.dark).length > 0 && (
+                  <div>
+                    <h3 className="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Dark Mode</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {Object.entries(component.cssVars.dark).map(([key, value]) => (
+                        <div key={key} className="contents">
+                          <code className="text-sm text-gray-800 dark:text-gray-300">{key}</code>
+                          <code className="text-sm text-gray-600 dark:text-gray-400">{value}</code>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -602,7 +401,7 @@ export function ComponentDetail({ component: initialComponent, subdomain, regist
                             variant="default"
                             size="sm"
                             className="h-7"
-                            onClick={() => handleSaveFile(index)}
+                            onClick={handleSaveFile}
                             disabled={isSaving}
                           >
                             {isSaving ? "Saving..." : "Save"}
@@ -892,6 +691,218 @@ export function ComponentDetail({ component: initialComponent, subdomain, regist
                     className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors h-7"
                   >
                     Add Registry Dependency
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CSS Variables */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">CSS Variables</h2>
+            </div>
+            <div className="space-y-4">
+              {/* Theme Variables */}
+              <div>
+                <h3 className="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Theme</h3>
+                <div className="space-y-1">
+                  {Object.entries(localComponent.cssVars?.theme || {}).map(([key, value]) => (
+                    <div key={key} className="flex gap-1">
+                      <Input
+                        value={key}
+                        readOnly
+                        placeholder="Variable name"
+                        className="flex-1 text-sm bg-gray-100 dark:bg-gray-950 border-0 h-8"
+                      />
+                      <Input
+                        value={value}
+                        onChange={(e) => setLocalComponent(prev => ({
+                          ...prev,
+                          cssVars: {
+                            ...prev.cssVars,
+                            theme: {
+                              ...(prev.cssVars?.theme || {}),
+                              [key]: e.target.value
+                            }
+                          }
+                        }))}
+                        placeholder="Value"
+                        className="flex-1 text-sm bg-gray-100 dark:bg-gray-950 border-0 h-8"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setLocalComponent(prev => {
+                            const newCssVars = { ...prev.cssVars };
+                            if (newCssVars.theme) {
+                              const { [key]: _, ...rest } = newCssVars.theme;
+                              newCssVars.theme = rest;
+                            }
+                            return { ...prev, cssVars: newCssVars };
+                          });
+                        }}
+                        className="h-8 w-8 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setLocalComponent(prev => ({
+                        ...prev,
+                        cssVars: {
+                          ...prev.cssVars,
+                          theme: {
+                            ...(prev.cssVars?.theme || {}),
+                            '--new-var': ''
+                          }
+                        }
+                      }));
+                    }}
+                    className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors h-7"
+                  >
+                    Add Theme Variable
+                  </Button>
+                </div>
+              </div>
+
+              {/* Light Mode Variables */}
+              <div>
+                <h3 className="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Light Mode</h3>
+                <div className="space-y-1">
+                  {Object.entries(localComponent.cssVars?.light || {}).map(([key, value]) => (
+                    <div key={key} className="flex gap-1">
+                      <Input
+                        value={key}
+                        readOnly
+                        placeholder="Variable name"
+                        className="flex-1 text-sm bg-gray-100 dark:bg-gray-950 border-0 h-8"
+                      />
+                      <Input
+                        value={value}
+                        onChange={(e) => setLocalComponent(prev => ({
+                          ...prev,
+                          cssVars: {
+                            ...prev.cssVars,
+                            light: {
+                              ...(prev.cssVars?.light || {}),
+                              [key]: e.target.value
+                            }
+                          }
+                        }))}
+                        placeholder="Value"
+                        className="flex-1 text-sm bg-gray-100 dark:bg-gray-950 border-0 h-8"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setLocalComponent(prev => {
+                            const newCssVars = { ...prev.cssVars };
+                            if (newCssVars.light) {
+                              const { [key]: _, ...rest } = newCssVars.light;
+                              newCssVars.light = rest;
+                            }
+                            return { ...prev, cssVars: newCssVars };
+                          });
+                        }}
+                        className="h-8 w-8 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setLocalComponent(prev => ({
+                        ...prev,
+                        cssVars: {
+                          ...prev.cssVars,
+                          light: {
+                            ...(prev.cssVars?.light || {}),
+                            '--new-var': ''
+                          }
+                        }
+                      }));
+                    }}
+                    className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors h-7"
+                  >
+                    Add Light Mode Variable
+                  </Button>
+                </div>
+              </div>
+
+              {/* Dark Mode Variables */}
+              <div>
+                <h3 className="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Dark Mode</h3>
+                <div className="space-y-1">
+                  {Object.entries(localComponent.cssVars?.dark || {}).map(([key, value]) => (
+                    <div key={key} className="flex gap-1">
+                      <Input
+                        value={key}
+                        readOnly
+                        placeholder="Variable name"
+                        className="flex-1 text-sm bg-gray-100 dark:bg-gray-950 border-0 h-8"
+                      />
+                      <Input
+                        value={value}
+                        onChange={(e) => setLocalComponent(prev => ({
+                          ...prev,
+                          cssVars: {
+                            ...prev.cssVars,
+                            dark: {
+                              ...(prev.cssVars?.dark || {}),
+                              [key]: e.target.value
+                            }
+                          }
+                        }))}
+                        placeholder="Value"
+                        className="flex-1 text-sm bg-gray-100 dark:bg-gray-950 border-0 h-8"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setLocalComponent(prev => {
+                            const newCssVars = { ...prev.cssVars };
+                            if (newCssVars.dark) {
+                              const { [key]: _, ...rest } = newCssVars.dark;
+                              newCssVars.dark = rest;
+                            }
+                            return { ...prev, cssVars: newCssVars };
+                          });
+                        }}
+                        className="h-8 w-8 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setLocalComponent(prev => ({
+                        ...prev,
+                        cssVars: {
+                          ...prev.cssVars,
+                          dark: {
+                            ...(prev.cssVars?.dark || {}),
+                            '--new-var': ''
+                          }
+                        }
+                      }));
+                    }}
+                    className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors h-7"
+                  >
+                    Add Dark Mode Variable
                   </Button>
                 </div>
               </div>
