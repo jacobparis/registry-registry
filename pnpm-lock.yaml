@@ -68,6 +68,9 @@ importers:
       tailwind-merge:
         specifier: ^3.3.0
         version: 3.3.0
+      zod:
+        specifier: ^3.25.70
+        version: 3.25.70
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4.1.6
@@ -1255,6 +1258,9 @@ packages:
     resolution: {integrity: sha512-YgvUTfwqyc7UXVMrB+SImsVYSmTS8X/tSrtdNZMImM+n7+QTriRXyXim0mBrTXNeqzVF0KWGgHPeiyViFFrNDw==}
     engines: {node: '>=18'}
 
+  zod@3.25.70:
+    resolution: {integrity: sha512-2WWzL2X2GpPU6as2xK1HFb6U5BZdJMdpB5Qtlan4a1KLYcZ6Gvox+mqZpxOd66sfe5AP3pEWpd2BC3f0yLH/nQ==}
+
 snapshots:
 
   '@alloc/quick-lru@5.2.0': {}
@@ -2324,3 +2330,5 @@ snapshots:
       '@types/react': 19.1.4
 
   yallist@5.0.0: {}
+
+  zod@3.25.70: {}

@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { RegistryComponent } from "@/lib/subdomains";
 
 interface RegistryItemFile {
   path: string;
@@ -231,7 +232,17 @@ function InlineTextarea({
   );
 }
 
-export function ComponentDetail({ component: initialComponent, subdomain, registryData }: ComponentDetailProps) {
+export function ComponentDetail({ component: initialComponent, subdomain, registryData }: {
+  component: RegistryComponent;
+  subdomain: string;
+  registryData: {
+    name?: string;
+    description?: string;
+    emoji: string;
+    createdAt: number;
+    registry: RegistryComponent[];
+  };
+}) {
   const allComponents = registryData.registry;
   const [component, setComponent] = useState<RegistryItemData>(initialComponent);
   const [copiedText, setCopiedText] = useState<string | null>(null);

@@ -15,39 +15,25 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { RegistryComponent } from "@/lib/subdomains";
 
-interface RegistryItemData {
-  name: string;
-  type: string;
-  description?: string;
-  dependencies?: string[];
-  registryDependencies?: string[];
-  files?: Array<{
-    path: string;
-    type: string;
-    content?: string;
-    target?: string;
-  }>;
-}
-
-interface RegistrySidebarProps {
+export function RegistrySidebar({ registryName, allComponents }: {
   subdomain: string;
   registryName: string;
-  allComponents: RegistryItemData[];
-}
-
-export function RegistrySidebar({ subdomain, registryName, allComponents }: RegistrySidebarProps) {
+  allComponents: RegistryComponent[];
+}) {
   const pathname = usePathname();
+
 
   // Group components by type
   const componentsByType = allComponents.reduce((acc, comp) => {
-    const type = comp.type.replace('registry:', '');
+    const type = (comp.type || 'other').replace('registry:', '');
     if (!acc[type]) {
       acc[type] = [];
     }
     acc[type].push(comp);
     return acc;
-  }, {} as Record<string, RegistryItemData[]>);
+  }, {} as Record<string, RegistryComponent[]>);
 
   // Sort types for consistent ordering
   const sortedTypes = Object.keys(componentsByType).sort();
@@ -83,7 +69,7 @@ export function RegistrySidebar({ subdomain, registryName, allComponents }: Regi
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {componentsByType[type].map((comp: RegistryItemData) => {
+                {componentsByType[type].map((comp: RegistryComponent) => {
                   const isActive = pathname === `/items/${comp.name}`;
                   
                   return (

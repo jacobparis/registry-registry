@@ -24,6 +24,7 @@ export default async function SubdomainLayout({ children, params }: SubdomainLay
 
   const allComponents = subdomainData.registry || [];
 
+  console.log(allComponents);
   return (
     <SidebarProvider>
       <RegistrySidebar 

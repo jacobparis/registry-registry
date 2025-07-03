@@ -1,4 +1,50 @@
 import { redis } from '@/lib/redis';
+import { z } from 'zod';
+
+// Zod schemas
+const registryComponentSchema = z.object({
+  name: z.string().optional(),
+  type: z.string().optional(),
+  description: z.string().optional(),
+  dependencies: z.array(z.string()).optional(),
+  registryDependencies: z.array(z.string()).optional(),
+  files: z.array(z.object({
+    path: z.string().optional(),
+    type: z.string().optional(),
+    content: z.string().optional(),
+    target: z.string().optional(),
+  })).optional(),
+  tailwind: z.object({
+    config: z.record(z.any()).optional(),
+  }).optional(),
+  cssVars: z.object({
+    light: z.record(z.string()).optional(),
+    dark: z.record(z.string()).optional(),
+  }).optional(),
+});
+
+const subdomainConfigSchema = z.object({
+  emoji: z.string().refine(isValidIcon, {
+    message: "Invalid emoji icon",
+  }),
+  createdAt: z.number(),
+  registry: z.array(registryComponentSchema).transform((items) => {
+    const seen = new Set<string>();
+    return items.filter(item => {
+      // Remove empty objects and components without names
+      if (Object.keys(item).length === 0) return false;
+      if (!item.name) return false;
+      if (seen.has(item.name)) return false;
+      seen.add(item.name);
+      return true;
+    });
+  }),
+  name: z.string().optional(),
+  description: z.string().optional(),
+});
+
+export type RegistryComponent = z.infer<typeof registryComponentSchema>;
+export type SubdomainConfig = z.infer<typeof subdomainConfigSchema>;
 
 export function isValidIcon(str: string) {
   if (str.length > 10) {
@@ -26,55 +72,10 @@ export function isValidIcon(str: string) {
   return str.length >= 1 && str.length <= 10;
 }
 
-// Shadcn registry component type
-type RegistryComponent = {
-  name: string;
-  type: string;
-  description?: string;
-  dependencies?: string[];
-  registryDependencies?: string[];
-  files: Array<{
-    path: string;
-    type: string;
-    content?: string;
-    target?: string;
-  }>;
-  tailwind?: {
-    config?: Record<string, any>;
-  };
-  cssVars?: {
-    light?: Record<string, string>;
-    dark?: Record<string, string>;
-  };
-};
-
-type SubdomainConfig = {
-  emoji: string;
-  createdAt: number;
-  registry: RegistryComponent[];
-  name?: string;
-  description?: string;
-};
-
 export function isValidRegistry(registryJson: string): boolean {
   try {
     const registry = JSON.parse(registryJson);
-    
-    // Check if it's an array
-    if (!Array.isArray(registry)) {
-      console.log('Registry is not an array');
-      console.log(registry);
-      return false;
-    }
-
-    // // Check if each item has required properties
-    // for (const component of registry) {
-    //   if (!component.name || !component.type || !component.files || !Array.isArray(component.files)) {
-    //     return false;
-    //   }
-    // }
-
-    return true;
+    return z.array(registryComponentSchema).safeParse(registry).success;
   } catch (error) {
     return false;
   }
@@ -90,7 +91,16 @@ export async function getSubdomainData(subdomain: string): Promise<SubdomainConf
     return null;
   }
 
-  return data as SubdomainConfig;
+  // Handle both string and object formats
+  const rawData = typeof data === 'string' ? JSON.parse(data) : data;
+  const result = subdomainConfigSchema.safeParse(rawData);
+  
+  if (!result.success) {
+    console.error('Invalid subdomain data:', result.error);
+    return null;
+  }
+
+  return result.data;
 }
 
 export async function getComponentData(subdomain: string, componentName: string): Promise<RegistryComponent | null> {
@@ -103,17 +113,16 @@ export async function getComponentData(subdomain: string, componentName: string)
     return null;
   }
 
-  // Handle both string and object formats for backward compatibility
-  if (typeof data === 'string') {
-    try {
-      return JSON.parse(data);
-    } catch (error) {
-      console.error('Failed to parse component data JSON:', error);
-      return null;
-    }
-  }
+  // Handle both string and object formats
+  const rawData = typeof data === 'string' ? JSON.parse(data) : data;
+  const result = registryComponentSchema.safeParse(rawData);
   
-  return data as RegistryComponent;
+  if (!result.success) {
+    console.error('Invalid component data:', result.error);
+    return null;
+  }
+
+  return result.data;
 }
 
 export async function getAllSubdomains() {
@@ -132,18 +141,18 @@ export async function getAllSubdomains() {
     let data: SubdomainConfig | null = null;
     
     if (rawData) {
-      // Handle backwards compatibility - if data is already an object (old format)
-      if (typeof rawData === 'object' && rawData !== null) {
-        console.log('Found old format data for', subdomain, '- converting...');
-        data = rawData as SubdomainConfig;
-      }
-      // Handle new format - data is a JSON string
-      else if (typeof rawData === 'string') {
-        try {
-          data = JSON.parse(rawData);
-        } catch (error) {
-          console.error('Failed to parse subdomain data JSON for', subdomain, ':', error);
+      try {
+        // Parse the data if it's a string
+        const parsedData = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+        const result = subdomainConfigSchema.safeParse(parsedData);
+        
+        if (result.success) {
+          data = result.data;
+        } else {
+          console.error('Invalid subdomain data for', subdomain, ':', result.error);
         }
+      } catch (error) {
+        console.error('Failed to parse subdomain data JSON for', subdomain, ':', error);
       }
     }
 
